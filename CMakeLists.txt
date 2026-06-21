@@ -42,10 +42,22 @@ target_include_directories(vector_lib INTERFACE
 )
 target_compile_features(vector_lib INTERFACE cxx_std_17)
 
-# Specify both header files as sources for better IDE support
+# Specify header files as sources for better IDE support
 target_sources(vector_lib INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/vector.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/vector.hpp>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/list.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/list.hpp>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/unique_ptr.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/unique_ptr.hpp>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/shared_ptr.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/shared_ptr.hpp>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/map.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/map.hpp>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/stack.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/stack.hpp>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/queue.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/queue.hpp>
 )
 
 # Option to build tests
@@ -63,11 +75,18 @@ if(BUILD_TESTS)
     message(STATUS "Found Google Test, building tests")
     
     # Test executable
-    add_executable(test_vector_gtest test/test_vector_gtest.cpp)
+    add_executable(test_vector_gtest tests/test_vector_gtest.cpp)
     target_link_libraries(test_vector_gtest 
         PRIVATE 
         vector_lib 
         GTest::gtest_main
+    )
+    
+    # Benchmark executable
+    add_executable(benchmark_vector benchmarks/benchmark_vector.cpp)
+    target_link_libraries(benchmark_vector 
+        PRIVATE 
+        vector_lib
     )
     
     # Enable testing
@@ -75,7 +94,7 @@ if(BUILD_TESTS)
     add_test(NAME VectorTests COMMAND test_vector_gtest)
     
     # Set test properties
-    set_target_properties(test_vector_gtest PROPERTIES
+    set_target_properties(test_vector_gtest benchmark_vector PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON
     )
@@ -85,7 +104,14 @@ endif()
 include(GNUInstallDirs)
 
 # Install the header files
-install(FILES include/vector.h include/vector.hpp
+install(FILES
+    include/vector.h include/vector.hpp
+    include/list.h include/list.hpp
+    include/unique_ptr.h include/unique_ptr.hpp
+    include/shared_ptr.h include/shared_ptr.hpp
+    include/map.h include/map.hpp
+    include/stack.h include/stack.hpp
+    include/queue.h include/queue.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/custom_stl
 )
 

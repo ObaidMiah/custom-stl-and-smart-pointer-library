@@ -1,40 +1,58 @@
-# My Custom Vector Implementation
+# Custom STL and Smart Pointer Library
 
-I built this as a learning project to understand how `std::vector` works under the hood. It's a complete implementation of a dynamic array that behaves like the real thing.
+This is a learning project where I rebuild some of C++'s most important standard
+library pieces from scratch — the containers and smart pointers you normally get
+for free from `std::`. The goal isn't to replace the real thing; it's to actually
+understand how they work under the hood by implementing them myself.
 
-## What it does
+## How this project was built (honesty note)
 
-This is basically my version of `std::vector`. It automatically grows when you add elements, handles memory for you, and works with STL algorithms. I implemented all the core functionality you'd expect:
+I used an AI assistant to set up the **scaffolding** and **testing infrastructure** —
+the class layouts, method signatures, build configuration, and the test harness.
+That part is the boilerplate I wanted out of the way.
 
-- Create vectors and fill them with data
-- Add and remove elements
-- Access elements safely (or unsafely if you want speed)
-- Iterate through your data
-- Copy and move vectors around efficiently
+**The actual implementations are mine.** Every algorithm — the memory management,
+the pointer surgery, the reference counting, the tree logic — I write and reason
+through myself. The scaffold files contain `// TODO` comments describing what each
+method should do; the working code that fills them in is my own work. This README
+marks which pieces are finished so you can tell what's me vs. what's still a stub.
 
-## How to use it
+## What's being built and why
+
+Each piece is chosen because it teaches something the others don't, not just to
+pad out a list. Here's the plan in plain terms:
+
+| Piece | What it is (in plain English) | Why it's worth building |
+|-------|-------------------------------|-------------------------|
+| **Vector** ✅ | A list that grows automatically as you add things, stored in one continuous block of memory. | Teaches raw memory management — allocating, growing, and cleaning up by hand. The foundation everything else builds on. |
+| **List** | A chain of items where each one points to its neighbors, instead of sitting in one block. | Teaches a totally different memory model (lots of small linked pieces) and how to write a real *iterator* that walks the chain. |
+| **UniquePtr** | A pointer that owns one object and automatically deletes it when it goes away. Only one owner allowed. | Teaches ownership — the idea that frees you from manually deleting memory and causing leaks. |
+| **SharedPtr / WeakPtr** | Pointers that let several owners share one object, which is deleted only when the last owner is done. WeakPtr watches without owning. | Teaches *reference counting* — keeping a tally of owners so the object lives exactly as long as it's needed. |
+| **Map** | A dictionary: look things up by a key (like a name) to get a value (like a phone number), kept in sorted order. | Teaches tree data structures and searching — the logic behind fast lookups. |
+| **Stack** | A pile where you only add and remove from the top (last in, first out). | Teaches how a simple, restricted interface can be built on top of a container you already have (it reuses Vector). |
+| **Queue** | A line where you add at the back and remove from the front (first in, first out). | Same idea as Stack, but shows why the *choice* of underlying container matters (it reuses List for speed). |
+
+✅ = implemented and tested. Everything else is currently scaffolded with stubs and
+is actively being implemented.
+
+## Quick example (Vector)
 
 ```cpp
 #include "vector.h"
 
 int main() {
-    // Create a vector with 5 elements, all set to 42
-    Vector<int> numbers(5, 42);
+    Vector<int> numbers(5, 42);   // 5 elements, all 42
 
-    // Add some more numbers
     numbers.push_back(100);
     numbers.push_back(200);
 
-    // Check what we have
-    std::cout << "Size: " << numbers.size() << std::endl;
+    std::cout << "Size: "  << numbers.size()  << std::endl;
     std::cout << "First: " << numbers.front() << std::endl;
-    std::cout << "Last: " << numbers.back() << std::endl;
+    std::cout << "Last: "  << numbers.back()  << std::endl;
 
-    // Print everything
     for (int num : numbers) {
         std::cout << num << " ";
     }
-
     return 0;
 }
 ```
@@ -43,25 +61,44 @@ int main() {
 
 ```
 ├── include/
-│   ├── vector.h      # The interface
-│   └── vector.hpp    # All the implementation details
-├── test/
-│   └── test_vector_gtest.cpp  # 28 tests to make sure it works
-├── CMakeLists.txt    # Build configuration
-└── setup_gtest.sh    # Script to install Google Test
+│   ├── vector.h / vector.hpp          # Growable array        (done)
+│   ├── list.h / list.hpp              # Doubly-linked list    (scaffold)
+│   ├── unique_ptr.h / unique_ptr.hpp  # Exclusive-owner ptr   (scaffold)
+│   ├── shared_ptr.h / shared_ptr.hpp  # Shared + weak ptrs    (scaffold)
+│   ├── map.h / map.hpp                # Key/value tree        (scaffold)
+│   ├── stack.h / stack.hpp            # LIFO adapter          (scaffold)
+│   └── queue.h / queue.hpp            # FIFO adapter          (scaffold)
+├── tests/
+│   └── test_vector_gtest.cpp          # 29 tests for Vector
+├── benchmarks/
+│   └── benchmark_vector.cpp           # Vector vs std::vector timing
+├── docs/                              # Performance charts + scripts
+├── data/                              # Benchmark results (JSON)
+├── CMakeLists.txt                     # Build configuration
+└── requirements.txt                   # Python deps for charts
 ```
 
-## Building it
+Each `.h` file holds the class design and documented method signatures; each
+`.hpp` holds the implementations (or, for unfinished pieces, the `// TODO` stubs).
 
-### First time setup
+## How it works internally
 
-You'll need Google Test for the tests. I made a script to set it up:
+Storage is managed by hand instead of leaning on `std::` helpers. For example,
+Vector uses `malloc`/`free` for raw memory and placement `new` to build objects in
+it, doubling its capacity when it runs out of room — just like the real
+`std::vector`. The smart pointers manage their objects' lifetimes with destructors
+and (for SharedPtr) a small shared counter. Getting the construct/destroy and
+allocate/free steps in the right order is the trickiest and most educational part.
+
+## Building and testing
+
+### First-time setup (Google Test)
 
 ```bash
-./setup_gtest.sh
+./scripts/setup_gtest.sh
 ```
 
-### Building and testing
+### Build and run the tests
 
 ```bash
 mkdir build && cd build
@@ -70,69 +107,33 @@ make
 ./test_vector_gtest
 ```
 
-If cmake isn't in your PATH (like on macOS), you might need:
+On macOS, if `cmake` isn't on your PATH:
 
 ```bash
 /Applications/CMake.app/Contents/bin/cmake ..
 ```
 
-## What's implemented
+## Benchmarking and charts
 
-I focused on the core functionality:
+A benchmark compares this Vector against `std::vector` on `push_back` and writes
+the results to JSON, which a Python script turns into an interactive chart.
 
-**Making vectors:**
+```bash
+# 1. Run the benchmark (creates data/benchmark_data.json)
+cd build && ./benchmark_vector
 
-- `Vector()` - empty vector
-- `Vector(size, value)` - filled with specific values
-- Copy and move constructors
+# 2. Generate the chart
+cd ../docs/scripts && python3 generate_plotly_charts.py
 
-**Getting data:**
+# 3. Open it
+open ../charts/performance_chart.html
+```
 
-- `vec[i]` - fast access (no bounds checking)
-- `vec.at(i)` - safe access (throws if out of bounds)
-- `vec.front()` and `vec.back()` - first and last elements
-- `vec.data()` - raw pointer to the data
-
-**Managing size:**
-
-- `vec.size()` - how many elements
-- `vec.capacity()` - how much space is allocated
-- `vec.empty()` - is it empty?
-- `vec.reserve(n)` - allocate space for n elements
-- `vec.resize(n)` - change size to n
-
-**Modifying:**
-
-- `vec.push_back(item)` - add to the end
-- `vec.pop_back()` - remove from the end
-- `vec.clear()` - remove everything
-
-**Iterating:**
-
-- `vec.begin()` and `vec.end()` - for loops and algorithms
-- Range-based for loops work: `for (auto& item : vec)`
-
-## How it works internally
-
-I use `malloc`/`free` for raw memory and placement new to construct objects. When you add elements and run out of space, it doubles the capacity (just like the real `std::vector`).
-
-The memory management was the trickiest part - you have to be really careful about when you construct and destroy objects vs when you allocate and free memory.
-
-## Testing
-
-I wrote 28 tests that cover:
-
-- All the constructors
-- Element access and bounds checking
-- Memory management and resizing
-- Adding and removing elements
-- Iterators and STL compatibility
-- Edge cases and error handling
-
-Run `make test` to see them all pass.
+Install the Python dependencies first with `pip install -r requirements.txt`.
 
 ## Requirements
 
-- C++17 (uses some modern features)
+- C++17
 - CMake 3.16 or newer
-- The setup script will handle Google Test
+- Python 3 (only for the performance charts)
+- Google Test (the setup script handles it)
