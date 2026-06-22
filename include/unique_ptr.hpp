@@ -9,31 +9,35 @@ UniquePtr<T>::UniquePtr(T* ptr) noexcept : m_ptr(ptr) {}
 
 template<typename T>
 UniquePtr<T>::~UniquePtr() {
-    // TODO: delete m_ptr (delete nullptr is safe)
+    delete m_ptr;
 }
 
 template<typename T>
 UniquePtr<T>::UniquePtr(UniquePtr&& other) noexcept : m_ptr(nullptr) {
-    // TODO: take other.m_ptr, then set other.m_ptr to nullptr
-    (void)other;
+    m_ptr = other.m_ptr; 
+    other.m_ptr = nullptr; 
 }
 
 template<typename T>
 UniquePtr<T>& UniquePtr<T>::operator=(UniquePtr&& other) noexcept {
-    // TODO: guard self-assignment, delete current m_ptr, steal other's, null other
-    (void)other;
+    if(this != &other)
+    {
+        T* temp = m_ptr; 
+        m_ptr = other.m_ptr;
+        other.m_ptr = nullptr; 
+        delete temp; 
+    }
+
     return *this;
 }
 
 template<typename T>
 T& UniquePtr<T>::operator*() const {
-    // TODO: return the owned object (*m_ptr)
     return *m_ptr;
 }
 
 template<typename T>
 T* UniquePtr<T>::operator->() const noexcept {
-    // TODO: return m_ptr so callers can reach members
     return m_ptr;
 }
 
@@ -44,14 +48,15 @@ T* UniquePtr<T>::get() const noexcept {
 
 template<typename T>
 T* UniquePtr<T>::release() noexcept {
-    // TODO: stop owning without deleting: save m_ptr, null it, return the saved ptr
-    return nullptr;
+    T* temp = m_ptr; 
+    m_ptr = nullptr; 
+    return temp;
 }
 
 template<typename T>
 void UniquePtr<T>::reset(T* ptr) noexcept {
-    // TODO: delete the current object, then adopt ptr
-    (void)ptr;
+    delete m_ptr; 
+    m_ptr = ptr; 
 }
 
 template<typename T>
