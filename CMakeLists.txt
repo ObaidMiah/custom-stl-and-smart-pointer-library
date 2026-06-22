@@ -74,14 +74,21 @@ if(BUILD_TESTS)
     find_package(GTest REQUIRED)
     message(STATUS "Found Google Test, building tests")
     
-    # Test executable
+    # Test executables
     add_executable(test_vector_gtest tests/test_vector_gtest.cpp)
-    target_link_libraries(test_vector_gtest 
-        PRIVATE 
-        vector_lib 
+    target_link_libraries(test_vector_gtest
+        PRIVATE
+        vector_lib
         GTest::gtest_main
     )
-    
+
+    add_executable(test_list_gtest tests/test_list_gtest.cpp)
+    target_link_libraries(test_list_gtest
+        PRIVATE
+        vector_lib
+        GTest::gtest_main
+    )
+
     # Benchmark executable
     add_executable(benchmark_vector benchmarks/benchmark_vector.cpp)
     target_link_libraries(benchmark_vector 
@@ -92,9 +99,10 @@ if(BUILD_TESTS)
     # Enable testing
     enable_testing()
     add_test(NAME VectorTests COMMAND test_vector_gtest)
-    
+    add_test(NAME ListTests COMMAND test_list_gtest)
+
     # Set test properties
-    set_target_properties(test_vector_gtest benchmark_vector PROPERTIES
+    set_target_properties(test_vector_gtest test_list_gtest benchmark_vector PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON
     )
