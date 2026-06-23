@@ -16,7 +16,7 @@ struct ControlBlock {
     size_t shared_count;   // Number of owning SharedPtrs
     size_t weak_count;     // Number of observing WeakPtrs
 
-    explicit ControlBlock(T* p) : ptr(p), shared_count(1), weak_count(0) {}
+    explicit ControlBlock(T* p) : ptr(p), shared_count(1), weak_count(1) {}
 };
 
 // Reference-counted shared ownership: the object is freed when the last
