@@ -15,42 +15,114 @@ Map<K, V>::~Map() {
 template<typename K, typename V>
 typename Map<K, V>::Node*
 Map<K, V>::insert(Node* node, const K& key, const V& value, bool& inserted) {
-    // TODO:
-    //   if node == nullptr: set inserted = true; return new Node(key, value)
-    //   if key < node->key:   node->left  = insert(node->left,  key, value, inserted)
-    //   else if key > node->key: node->right = insert(node->right, key, value, inserted)
-    //   else: key exists -> node->value = value; inserted = false
-    //   return node
-    (void)key; (void)value; (void)inserted;
+    if(node == nullptr)
+    {
+        inserted = true;
+        return new Node(key, value);
+    }
+
+    if(key < node->key)
+    {
+        node->left = insert(node->left, key, value, inserted);
+    }
+    else if(key > node->key)
+    {
+        node->right = insert(node->right, key, value, inserted);
+    }
+    else
+    {
+        // Key already present: operator[] must NOT overwrite the existing value.
+        inserted = false;
+    }
+
     return node;
 }
 
 template<typename K, typename V>
 typename Map<K, V>::Node*
 Map<K, V>::find(Node* node, const K& key) const {
-    // TODO: standard BST descent; return the matching node or nullptr
-    (void)key;
-    return node;
+    if(node == nullptr)
+    {
+        return nullptr;          // key not in the tree
+    }
+
+    if(key == node->key)
+    {
+        return node;
+    }
+    else if(key < node->key)
+    {
+        return find(node->left, key);
+    }
+    else
+    {
+        return find(node->right, key);
+    }
 }
 
 template<typename K, typename V>
 typename Map<K, V>::Node*
 Map<K, V>::erase(Node* node, const K& key, bool& removed) {
-    // TODO (the tricky one):
-    //   descend left/right as in find
-    //   on match:
-    //     0 or 1 child -> splice the child in, delete node
-    //     2 children   -> copy the in-order successor (leftmost of right subtree)
-    //                     into node, then erase that successor from node->right
-    //   set removed appropriately; return the (possibly new) subtree root
-    (void)key; (void)removed;
+    if(node == nullptr)
+    {
+        removed = false;         // key not found
+        return nullptr;
+    }
+
+    if(key < node->key)
+    {
+        node->left = erase(node->left, key, removed);
+    }
+    else if(key > node->key)
+    {
+        node->right = erase(node->right, key, removed);
+    }
+    else
+    {
+        // Found the node to remove.
+        removed = true;
+
+        // Case 1: no left child -> splice in the right child (may be null).
+        if(node->left == nullptr)
+        {
+            Node* child = node->right;
+            delete node;
+            return child;
+        }
+        // Case 2: no right child -> splice in the left child.
+        if(node->right == nullptr)
+        {
+            Node* child = node->left;
+            delete node;
+            return child;
+        }
+
+        // Case 3: two children -> copy the in-order successor (smallest key in
+        // the right subtree, which has no left child), then erase it from there.
+        Node* succ = node->right;
+        while(succ->left != nullptr)
+        {
+            succ = succ->left;
+        }
+        node->key   = succ->key;
+        node->value = succ->value;
+
+        bool dummy = false;      // don't let this clobber 'removed' (already true)
+        node->right = erase(node->right, succ->key, dummy);
+    }
+
     return node;
 }
 
 template<typename K, typename V>
 void Map<K, V>::destroy(Node* node) noexcept {
-    // TODO: post-order — destroy(left); destroy(right); delete node;
-    (void)node;
+    if(node == nullptr)
+    {
+        return;
+    }
+    destroy(node->left);
+    destroy(node->right);
+    delete node;
 }
 
 // ---------------------------------------------------------------------------
@@ -58,30 +130,41 @@ void Map<K, V>::destroy(Node* node) noexcept {
 // ---------------------------------------------------------------------------
 template<typename K, typename V>
 V& Map<K, V>::operator[](const K& key) {
-    // TODO: find key; if missing insert a default-constructed V; return the value ref
-    (void)key;
-    throw std::logic_error("Map::operator[] not implemented");
+    bool inserted = false;
+    // Insert a default-constructed value if the key is missing; leave an
+    // existing value untouched.
+    m_root = insert(m_root, key, V(), inserted);
+    if(inserted)
+    {
+        ++m_size;
+    }
+    return find(m_root, key)->value;   // guaranteed to exist now
 }
 
 template<typename K, typename V>
 V& Map<K, V>::at(const K& key) {
-    // TODO: find key; throw std::out_of_range if absent, else return its value
-    (void)key;
-    throw std::logic_error("Map::at not implemented");
+    Node* node = find(m_root, key);
+    if(node == nullptr)
+    {
+        throw std::out_of_range("Map::at key not found");
+    }
+    return node->value;
 }
 
 template<typename K, typename V>
 bool Map<K, V>::contains(const K& key) const {
-    // TODO: return find(m_root, key) != nullptr
-    (void)key;
-    return false;
+    return find(m_root, key) != nullptr;
 }
 
 template<typename K, typename V>
 bool Map<K, V>::erase(const K& key) {
-    // TODO: call the recursive erase, update m_root and m_size, return removed
-    (void)key;
-    return false;
+    bool removed = false;
+    m_root = erase(m_root, key, removed);
+    if(removed)
+    {
+        --m_size;
+    }
+    return removed;
 }
 
 template<typename K, typename V>
@@ -96,7 +179,9 @@ size_t Map<K, V>::size() const noexcept {
 
 template<typename K, typename V>
 void Map<K, V>::clear() noexcept {
-    // TODO: destroy(m_root), then reset m_root = nullptr and m_size = 0
+    destroy(m_root);
+    m_root = nullptr;
+    m_size = 0;
 }
 
 #endif // MAP_HPP

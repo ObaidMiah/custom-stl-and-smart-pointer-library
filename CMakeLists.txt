@@ -103,6 +103,27 @@ if(BUILD_TESTS)
         GTest::gtest_main
     )
 
+    add_executable(test_map_gtest tests/test_map_gtest.cpp)
+    target_link_libraries(test_map_gtest
+        PRIVATE
+        vector_lib
+        GTest::gtest_main
+    )
+
+    add_executable(test_stack_gtest tests/test_stack_gtest.cpp)
+    target_link_libraries(test_stack_gtest
+        PRIVATE
+        vector_lib
+        GTest::gtest_main
+    )
+
+    add_executable(test_queue_gtest tests/test_queue_gtest.cpp)
+    target_link_libraries(test_queue_gtest
+        PRIVATE
+        vector_lib
+        GTest::gtest_main
+    )
+
     # Benchmark executable
     add_executable(benchmark_vector benchmarks/benchmark_vector.cpp)
     target_link_libraries(benchmark_vector 
@@ -116,9 +137,14 @@ if(BUILD_TESTS)
     add_test(NAME ListTests COMMAND test_list_gtest)
     add_test(NAME UniquePtrTests COMMAND test_unique_ptr_gtest)
     add_test(NAME SharedPtrTests COMMAND test_shared_ptr_gtest)
+    add_test(NAME MapTests COMMAND test_map_gtest)
+    add_test(NAME StackTests COMMAND test_stack_gtest)
+    add_test(NAME QueueTests COMMAND test_queue_gtest)
 
     # Set test properties
-    set_target_properties(test_vector_gtest test_list_gtest test_unique_ptr_gtest test_shared_ptr_gtest benchmark_vector PROPERTIES
+    set_target_properties(
+        test_vector_gtest test_list_gtest test_unique_ptr_gtest test_shared_ptr_gtest
+        test_map_gtest test_stack_gtest test_queue_gtest benchmark_vector PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED ON
     )
