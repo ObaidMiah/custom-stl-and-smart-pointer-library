@@ -12,28 +12,24 @@ the class layouts, method signatures, build configuration, and the test harness.
 That part is the boilerplate I wanted out of the way.
 
 **The actual implementations are mine.** Every algorithm — the memory management,
-the pointer surgery, the reference counting, the tree logic — I write and reason
-through myself. The scaffold files contain `// TODO` comments describing what each
-method should do; the working code that fills them in is my own work. This README
-marks which pieces are finished so you can tell what's me vs. what's still a stub.
+the pointer surgery, the reference counting, the tree logic — I wrote and reasoned
+through myself. The AI also helped review my code and write the test suites.
 
-## What's being built and why
+## What's built and why
 
 Each piece is chosen because it teaches something the others don't, not just to
-pad out a list. Here's the plan in plain terms:
+pad out a list. **All of them are now implemented and tested** (101 tests total,
+all passing and verified leak-free with AddressSanitizer).
 
 | Piece | What it is (in plain English) | Why it's worth building |
 |-------|-------------------------------|-------------------------|
-| **Vector** ✅ | A list that grows automatically as you add things, stored in one continuous block of memory. | Teaches raw memory management — allocating, growing, and cleaning up by hand. The foundation everything else builds on. |
+| **Vector** | A list that grows automatically as you add things, stored in one continuous block of memory. | Teaches raw memory management — allocating, growing, and cleaning up by hand. The foundation everything else builds on. |
 | **List** | A chain of items where each one points to its neighbors, instead of sitting in one block. | Teaches a totally different memory model (lots of small linked pieces) and how to write a real *iterator* that walks the chain. |
 | **UniquePtr** | A pointer that owns one object and automatically deletes it when it goes away. Only one owner allowed. | Teaches ownership — the idea that frees you from manually deleting memory and causing leaks. |
 | **SharedPtr / WeakPtr** | Pointers that let several owners share one object, which is deleted only when the last owner is done. WeakPtr watches without owning. | Teaches *reference counting* — keeping a tally of owners so the object lives exactly as long as it's needed. |
 | **Map** | A dictionary: look things up by a key (like a name) to get a value (like a phone number), kept in sorted order. | Teaches tree data structures and searching — the logic behind fast lookups. |
 | **Stack** | A pile where you only add and remove from the top (last in, first out). | Teaches how a simple, restricted interface can be built on top of a container you already have (it reuses Vector). |
 | **Queue** | A line where you add at the back and remove from the front (first in, first out). | Same idea as Stack, but shows why the *choice* of underlying container matters (it reuses List for speed). |
-
-✅ = implemented and tested. Everything else is currently scaffolded with stubs and
-is actively being implemented.
 
 ## Quick example (Vector)
 
@@ -61,15 +57,14 @@ int main() {
 
 ```
 ├── include/
-│   ├── vector.h / vector.hpp          # Growable array        (done)
-│   ├── list.h / list.hpp              # Doubly-linked list    (scaffold)
-│   ├── unique_ptr.h / unique_ptr.hpp  # Exclusive-owner ptr   (scaffold)
-│   ├── shared_ptr.h / shared_ptr.hpp  # Shared + weak ptrs    (scaffold)
-│   ├── map.h / map.hpp                # Key/value tree        (scaffold)
-│   ├── stack.h / stack.hpp            # LIFO adapter          (scaffold)
-│   └── queue.h / queue.hpp            # FIFO adapter          (scaffold)
-├── tests/
-│   └── test_vector_gtest.cpp          # 29 tests for Vector
+│   ├── vector.h / vector.hpp          # Growable array
+│   ├── list.h / list.hpp              # Doubly-linked list
+│   ├── unique_ptr.h / unique_ptr.hpp  # Exclusive-owner pointer
+│   ├── shared_ptr.h / shared_ptr.hpp  # Shared + weak pointers
+│   ├── map.h / map.hpp                # Key/value tree (BST)
+│   ├── stack.h / stack.hpp            # LIFO adapter
+│   └── queue.h / queue.hpp            # FIFO adapter
+├── tests/                             # One GTest suite per piece (101 tests)
 ├── benchmarks/
 │   └── benchmark_vector.cpp           # Vector vs std::vector timing
 ├── docs/                              # Performance charts + scripts
@@ -79,7 +74,7 @@ int main() {
 ```
 
 Each `.h` file holds the class design and documented method signatures; each
-`.hpp` holds the implementations (or, for unfinished pieces, the `// TODO` stubs).
+`.hpp` holds the implementation.
 
 ## How it works internally
 
@@ -104,7 +99,7 @@ allocate/free steps in the right order is the trickiest and most educational par
 mkdir build && cd build
 cmake ..
 make
-./test_vector_gtest
+ctest            # runs all 7 test suites
 ```
 
 On macOS, if `cmake` isn't on your PATH:
